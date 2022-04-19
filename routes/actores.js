@@ -5,12 +5,11 @@ const Joi = require('joi')
 const validator = require('express-joi-validation').createValidator({})
 const { bodySchema } = require('../schemas/actor')
 
-
 router.get('/', (req, res) => {
   res.send('Hello world')
 })
 
-router.get('/login', async (req, res) => {
+router.get('/actor', async (req, res) => {
   let cliente = await pool.connect()
   const { user, password } = req.query
 
@@ -19,7 +18,6 @@ router.get('/login', async (req, res) => {
       `SELECT * FROM actores WHERE contrasena = $1 AND correo = $2`,
       [password, user]
     )
-    console.log(result.rows)
     res.json(result.rows)
   } catch (err) {
     console.log({ err })
@@ -32,7 +30,6 @@ router.get('/login', async (req, res) => {
     cliente.release(true)
   }
 })
-
 
 router.post('/actor', validator.body(bodySchema), async (req, res) => {
   try {
@@ -94,7 +91,7 @@ router.post('/actor', validator.body(bodySchema), async (req, res) => {
         fecha_actualizacion: fecha_actualizacion
       })
     } else {
-      res.json({})
+      res.json({ message: 'No se pudo crear el actor' })
     }
   } catch (e) {
     console.log(e)
@@ -104,4 +101,59 @@ router.post('/actor', validator.body(bodySchema), async (req, res) => {
   }
 })
 
+router.put('/actor/:id', async (req, res) => {
+  let cliente = await pool.connect()
+  const { id } = req.params
+  const {
+    documento,
+    tipo_documento,
+    nombres,
+    apellidos,
+    contrasena,
+    correo,
+    telefono_celular,
+    numero_expediente,
+    genero,
+    fecha_nacimiento,
+    estado_actor_id,
+    institucion_id,
+    tipo_actor_id,
+    fecha_creacion,
+    fecha_actualizacion
+  } = req.body
+  try {
+    const result = await cliente.query(
+      `UPDATE actores SET documento = $1, tipo_documento = $2, nombres = $3, apellidos = $4, contrasena = $5, correo = $6, telefono_celular = $7, numero_expediente = $8, genero = $9, fecha_nacimiento = $10, estado_actor_id = $11, institucion_id = $12, tipo_actor_id = $13, fecha_creacion = $14, fecha_actualizacion = $15 WHERE id = $16`,
+      [
+        documento,
+        tipo_documento,
+        nombres,
+        apellidos,
+        contrasena,
+        correo,
+        telefono_celular,
+        numero_expediente,
+        genero,
+        fecha_nacimiento,
+        estado_actor_id,
+        institucion_id,
+        tipo_actor_id,
+        fecha_creacion,
+        fecha_actualizacion,
+        id
+      ]
+    )
+    console.log(result.rowCount)
+    if (result.rowCount > 0) {
+      res.json({ message: 'Actualización realizada correctamente' })
+    } else {
+      res
+        .status(403)
+        .json({ message: 'Ocurrio un envento inesperado, intente de nuevo' })
+    }
+  } catch (err) {
+    console.log({ err })
+    res.status(500).json({ error: 'Internal error server' })
+  }
+})
 module.exports = router

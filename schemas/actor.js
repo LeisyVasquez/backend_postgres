@@ -16,7 +16,7 @@ const bodySchema = Joi.object({
     telefono_celular: Joi.string().max(30),
     numero_expediente: Joi.string().max(255),
     genero: Joi.string().max(6),
-    fecha_nacimiento: Joi.date().greater('now'),
+    fecha_nacimiento: Joi.date().less('now'),
     estado_actor_id: Joi.number()
       .integer()
       .required(),
@@ -24,8 +24,8 @@ const bodySchema = Joi.object({
       .integer()
       .required(),
     tipo_actor_id: Joi.number().integer(),
-    fecha_creacion: Joi.date().greater('now'),
-    fecha_actualizacion: Joi.date().greater('now')
+    fecha_creacion: Joi.date().less('now'),
+    fecha_actualizacion: Joi.date().less('now')
   })
 
 
