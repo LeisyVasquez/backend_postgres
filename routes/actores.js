@@ -50,8 +50,8 @@ router.post('/actor', validator.body(bodySchema), async (req, res) => {
       fecha_creacion,
       fecha_actualizacion
     } = req.body
-    const client = await pool.connect()
-    const response = await client.query(
+    const cliente = await pool.connect()
+    const response = await cliente.query(
       `INSERT INTO actores(documento, tipo_documento, nombres, apellidos, contrasena, correo, telefono_celular, numero_expediente, genero, fecha_nacimiento, estado_actor_id, institucion_id, tipo_actor_id, fecha_creacion,fecha_actualizacion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
       [
         documento,
@@ -98,6 +98,8 @@ router.post('/actor', validator.body(bodySchema), async (req, res) => {
     res
       .status(500)
       .json({ errorCode: e.errno, message: 'Error en el servidor' })
+  } finally {
+    cliente.release(true)
   }
 })
 
@@ -154,6 +156,39 @@ router.put('/actor/:id', async (req, res) => {
   } catch (err) {
     console.log({ err })
     res.status(500).json({ error: 'Internal error server' })
+  } finally {
+    cliente.release(true)
   }
 })
+
+router.delete('/actor/:id', async (req, res) => {
+  let cliente = await pool.connect()
+  const { id } = req.params
+  try {
+    const resultUser = await cliente.query(
+      `SELECT * FROM actores WHERE id = $1`,
+      [id]
+    )
+    if (resultUser.rows.length > 0) {
+      const result = await cliente.query(`DELETE FROM actores WHERE id = $1`, [
+        id
+      ])
+      if (result.rowCount > 0) res.send('Actor eliminado exitosamente')
+      else res.send('No se eliminó, ocurrió un evento inesperado')
+    } else {
+      res.status(409).json({ message: 'Error en dato en dato enviado' })
+    }
+  } catch (err) {
+    if (err.code == 23503) {
+      res
+        .status(417)
+        .json({ error: 'No se puede eliminar desde aquí este dato' })
+    }
+    res.status(500).json({ error: 'Error server' })
+  } finally {
+    cliente.release(true)
+  }
+})
+
+
 module.exports = router
