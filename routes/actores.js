@@ -1,13 +1,14 @@
 const { Router } = require('express')
 const router = Router()
 const { pool } = require('../database/config')
-const Joi = require('joi')
 const validator = require('express-joi-validation').createValidator({})
 const { bodySchema } = require('../schemas/actor')
 
 router.get('/', (req, res) => {
   res.send('Hello world')
 })
+
+
 
 router.get('/actor', async (req, res) => {
   let cliente = await pool.connect()
@@ -103,6 +104,21 @@ router.post('/actor', validator.body(bodySchema), async (req, res) => {
   }
 })
 
+
+/**
+ * @swagger
+ * /actor/:id:
+ *  put:
+ *   description: Se actualiza a un actor según su id de actor
+ *   tags: [Actor]
+ *   responses: 
+ *     '200': 
+ *      description: Se actualizó todo correctamente
+ *     '503':
+ *      description: Ocurrió un evento inesperado en el backend
+ *     '500':
+ *       description: Error del servidor
+ */
 router.put('/actor/:id', async (req, res) => {
   let cliente = await pool.connect()
   const { id } = req.params
@@ -145,12 +161,11 @@ router.put('/actor/:id', async (req, res) => {
         id
       ]
     )
-    console.log(result.rowCount)
     if (result.rowCount > 0) {
       res.json({ message: 'Actualización realizada correctamente' })
     } else {
       res
-        .status(403)
+        .status(503)
         .json({ message: 'Ocurrio un envento inesperado, intente de nuevo' })
     }
   } catch (err) {
